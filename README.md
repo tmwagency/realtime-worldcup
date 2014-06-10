@@ -1,7 +1,7 @@
-Node Twitter Hashtag Vote Monitor
+Realtime World Cup
 =======================
 
-**N.B.  THIS DEMO IS NOT COMPLETELY COMPLETE – IT WILL WORK, BUT NEEDS A BIT OF REWORK AS IT WAS BACKPORTED FROM A MORE COMPLEX APPLICATION **
+**N.B.  THIS IS A WORK I PROGRESS – INCLUDING THIS README **
 
 This builds on the initial demos - the [Node Basic Structure demo](https://github.com/tmwagency/node-basic-setup) and the [Node Twitter Wall demo](https://github.com/tmwagency/node-twitter-wall).
 
