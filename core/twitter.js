@@ -7,12 +7,13 @@
 var express = require('express')
 	, io = require('socket.io') //socket.io - used for our websocket connection
 	, client = require('socket.io-client')
+	, mongoose = require('mongoose')
 	, twitter = require('twitter') //ntwitter - allows easy JS access to twitter API's - https://github.com/AvianFlu/ntwitter
 	, _ = require('underscore')
 
-	// , Question = mongoose.model('Question')
-	// , State = mongoose.model('State')
-	// , state = require('../app/controllers/stateController')
+	, Symbol = mongoose.model('Symbol')
+	, State = mongoose.model('State')
+	, state = require('../app/controllers/stateController')
 	// , page = require('../app/controllers/pageController')
 	, pkg = require('../package.json');
 
@@ -58,78 +59,45 @@ module.exports = function (app, server, config) {
 	//Instantiate the twitter component
 	var t = new twitter(config.twitter);
 
-	//DB will eventually build this out for me, until then, we'll hard code it
-	var tracker = {
-		brazil : {
-			hashtags : {
-				'#BRA' : {
-					count: 0
-				}
-			},
-			total : 0
-		},
-		england : {
-			hashtags : {
-				'#ENG' : {
-					count: 0
-				},
-				'#3lions' : {
-					count: 0
-				}
-			},
-			total : 0
-		},
-		worldcup : {
-			hashtags : {
-				'#WorldCup' : {
-					count: 0
-				},
-				'#WorldCup2014' : {
-					count: 0
-				}
-			},
-			total : 0
-		}
-	};
-	var state = {
+	var currentState = {
 		totalTweets : 0
 	}
 	var tags = []; //used to hold the tags we'll be watching
+	var tracker;
 
 	function getTagsFromTrackingObject () {
 		//loop through each category of tracker
-		_.each(tracker, function (val, key) {
+		_.each(tracker, function (val, symbol) {
 
 			//loop through the array of tags and push them onto the tags array if they aren't already there
-			_.each(val.hashtags, function (val, key) {
-				pushToTagArray(val, key);
+			_.each(val.hashtags, function (val, hashtagName) {
+				pushToTagArray(val, hashtagName);
 			});
 		});
 
 		return tags;
 	}
-	function pushToTagArray (val, key) {
-		var exists = isInArray(key, tags);
+	function pushToTagArray (val, tag) {
+		var exists = tags.has(tag);
 
 		//if the value doesn't exist in our array
 		if (!exists) {
-			tags.push(key);
+			tags.push(tag);
 		}
 	}
-	function isInArray(value, array) {
-		return array.indexOf(value) > -1;
-	}
 
-	/////////////twitter stuff
-
-
+	/////////////TWITTER STREAMING STUFF
 	t.openStream = function () {
 		console.log('twitter.js: Opening Stream');
-		// State.loadGlobalState(function (err, loadedGlobalState) {
-		// 	globalState.currentGlobalState = state.makeStateReadable(loadedGlobalState);
+		Symbol.loadAll(function (err, symbols) {
 
-			t.createStream();
-		// });
+			state.getStates(symbols, function (symbolArray) {
+				state.stateArrayToObject(symbolArray, function (symbolObject) {
+					tracker = symbolObject;
+					t.createStream();
+				});
+			});
+		});
 	};
 	t.createStream = function () {
 
@@ -140,54 +108,50 @@ module.exports = function (app, server, config) {
 
 		//console.log('twitter.js: ', globalState.currentGlobalState);
 
-		//build stream of hashtags to watch for
-		//Question.getAllTags(function (tags) {
+		console.log('twitter.js: Watching tags: ', tags);
 
-			console.log('twitter.js: Watching tags: ', tags);
+		//Tell the twitter API to filter on the watchSymbols
+		// t.stream('statuses/filter', { track: tags }, function(stream) {
 
-			//Tell the twitter API to filter on the watchSymbols
-			t.stream('statuses/filter', { track: tags }, function(stream) {
+		// 	//We have a connection. Now watch the 'data' event for incomming tweets.
+		// 	stream.on('data', t.dataReceived);
+		// 	//catch any errors from the streaming API
+		// 	stream.on('error', function(error) {
+		// 		console.log("twitter.js: My error: ", error);
 
-				//We have a connection. Now watch the 'data' event for incomming tweets.
-				stream.on('data', t.dataReceived);
-				//catch any errors from the streaming API
-				stream.on('error', function(error) {
-					console.log("twitter.js: My error: ", error);
+		// 		//try reconnecting to twitter in 30 seconds
+		// 		// setTimeout(function () {
+		// 		// 	t.openStream();
+		// 		// }, 30000);
 
-					//try reconnecting to twitter in 30 seconds
-					// setTimeout(function () {
-					// 	t.openStream();
-					// }, 30000);
+		// 	});
+		// 	stream.on('end', function (response) {
+		// 		// Handle a disconnection
+		// 		console.log("twitter.js: Disconnection: ", response.statusCode);
 
-				});
-				stream.on('end', function (response) {
-					// Handle a disconnection
-					console.log("twitter.js: Disconnection: ", response.statusCode);
+		// 		//try reconnecting to twitter in 30 seconds
+		// // 		setTimeout(function () {
+		// // 			t.openStream();
+		// // 		}, 30000);
 
-					//try reconnecting to twitter in 30 seconds
-			// 		setTimeout(function () {
-			// 			t.openStream();
-			// 		}, 30000);
+		// 	});
+		// 	stream.on('destroy', function (response) {
+		// 		// Handle a 'silent' disconnection from Twitter, no end/error event fired
+		// 		console.log("twitter.js: Destroyed: ", response);
 
-				});
-				stream.on('destroy', function (response) {
-					// Handle a 'silent' disconnection from Twitter, no end/error event fired
-					console.log("twitter.js: Destroyed: ", response);
+		// 		//try reconnecting to twitter in 30 seconds
+		// // 		setTimeout(function () {
+		// // 			t.openStream();
+		// // 		}, 30000);
+		// 	});
+		// });
 
-					//try reconnecting to twitter in 30 seconds
-			// 		setTimeout(function () {
-			// 			t.openStream();
-			// 		}, 30000);
-				});
+		//dev only
+		setInterval(function () {
+			t.dataReceived({
+				text : '@dishmx #elfutbolesdetodos #mex 6 #bra 5'
 			});
-
-			//dev only
-			// setInterval(function () {
-			// 	t.dataReceived({
-			// 		text : '@dishmx #elfutbolesdetodos #mex 6 #bra 5'
-			// 	});
-			// }, 500);
-		//});
+		}, 500);
 
 		//t.setupStateSaver();
 	};
@@ -243,7 +207,7 @@ module.exports = function (app, server, config) {
 
 		//if the tweet was claimed by at least one symbol
 		if (validTweet) {
-			state.totalTweets++;
+			currentState.totalTweets++;
 		}
 		//t.emitReadableState();
 
@@ -283,11 +247,15 @@ module.exports = function (app, server, config) {
 		//state.updateAllStates(globalState.currentGlobalState, cb);
 	};
 
-	t.openStream(); //temp while we don't have db functionality
-
-
 	return t;
 
 };
 
+
+
+
+
+Array.prototype.has = function (value) {
+	return this.indexOf(value) > -1;
+}
 

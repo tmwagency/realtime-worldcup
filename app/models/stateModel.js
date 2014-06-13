@@ -13,15 +13,10 @@ var mongoose = require('mongoose')
  */
 
 var StateSchema = new Schema({
-	question				:	{	type : Schema.ObjectId, ref : 'Question'		},
-	date					:	{	type : Date, default : Date.now					},
-
-	tags					:	[{
-		tag					:	{	type : String, default : '', trim : true		},
-		votes				:	{	type : Number, default : 0						},
-		percentage			:	{	type : Number, default : 0						}
-	}],
-	totalVotes				:	{	type : Number, default : 0						}
+	hashtag				:	{	type : Schema.Types.ObjectId, ref : 'Hashtag'	},
+	name				:	String,
+	date				:	{	type : Date, default : Date.now					},
+	count				:	Number
 });
 
 
@@ -50,7 +45,7 @@ StateSchema.statics = {
 	* @api private
 	*/
 
-	load: function (qID, dateRange, cb) {
+	load: function (hashtag, dateRange, cb) {
 
 		if (dateRange === 'today') {
 			var now = new Date(),
@@ -58,7 +53,7 @@ StateSchema.statics = {
 
 
 			this.findOne({
-				question : qID,
+				hashtag : hashtag,
 				date: today
 			})
 				.exec(cb);
@@ -68,7 +63,7 @@ StateSchema.statics = {
 
 
 	/**
-	* Return a global state for all questions active today
+	* Return a global state for all symbols active today
 	*
 	* @param {Function} cb
 	* @api private
@@ -79,14 +74,9 @@ StateSchema.statics = {
 		var now = new Date(),
 			today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-		// this.find({
-		// 	date: today
-		// }, function (err, states) { console.log(states)});
-
 		this.find({
 			date: today
 		})
-			.populate('question')
 			.exec(cb);
 
 	}

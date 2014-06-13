@@ -1,7 +1,7 @@
 {
   "name": "node-twitter-vote-mongo",
-  "title": "Twitter Vote Counter",
-  "description": "A demo to show how to setup a Twitter vote counter",
+  "title": "Realtime World Cup",
+  "description": "A realtime watcher of World Cup team hashtags",
   "url": "/",
   "version": "0.0.1-10",
   "private": true,

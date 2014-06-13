@@ -1,0 +1,14 @@
+{
+	"brazil" : {
+		"hashtags" : ["#BRA"]
+	},
+	"england" : {
+		"hashtags" : ["#ENG", "#3lions"]
+	},
+	"spain" : {
+		"hashtags" : ["#ESP"]
+	},
+	"worldcup" : {
+		"hashtags" : ["#WorldCup", "#WorldCup2014"]
+	}
+}

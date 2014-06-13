@@ -15,29 +15,89 @@ var mongoose = require('mongoose')
  * Create a question
  */
 
-exports.create = function (q, cb) {
+exports.create = function (hashtag, cb) {
 
 	var now = new Date(),
 		today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
 	var state = new State({
-		question				:	q._id,
+		hashtag					:	hashtag._id,
+		name					:	hashtag.tagname,
 		date					:	today,
-		totalVotes				:	0
-	});
-
-	_.each(q.tags, function(tag) {
-		state.tags.push({
-			tag: tag,
-			votes: 0,
-			percentage: 0
-		});
+		count					:	0
 	});
 
 	state.save(cb);
-
 }
 
+
+
+exports.getStates = function (states, next) {
+
+	var hashtagLength = 0,
+		stateCheckCounter = 0;
+
+	//for each symbol
+	_.each(states, function (symbol, key) {
+
+		hashtagLength += symbol.hashtags.length;
+
+		//and then for each hashtag
+		_.each(symbol.hashtags, function (hashtag, j) {
+
+			State.load(hashtag._id, 'today', function (err, currentState) {
+
+				stateCheckCounter++;
+
+				states[key].hashtags[j].state = currentState;
+
+				if (stateCheckCounter === hashtagLength) {
+					next(states);
+				}
+			});
+
+		});
+	});
+}
+
+
+/**
+	Transformation function
+	Loops through our array of symbols and hashtags to convert into an object of format:
+
+	{
+		brazil : {
+			hashtags : {
+				'#BRA' : {
+					count: 0
+				}
+			},
+			total : 0
+		}
+	}
+*/
+exports.stateArrayToObject = function (states, next) {
+
+	var stateObject = {};
+
+	_.each(states, function (symbol) {
+
+		stateObject[symbol.name] = {
+			hashtags : {},
+			total : 0
+		}
+
+		_.each(symbol.hashtags, function (hashtag) {
+			stateObject[symbol.name].hashtags[hashtag.tagname] = {
+				count : hashtag.state.count
+			}
+
+			stateObject[symbol.name].total += stateObject[symbol.name].hashtags[hashtag.tagname].count;
+		})
+	});
+
+	next(stateObject);
+}
 
 /**
  * Make state a more readable format than how it comes back from the DB

@@ -9,7 +9,7 @@ var async = require('async')
  * Controllers
  */
 
-var question = require('../app/controllers/questionController')
+var symbol = require('../app/controllers/symbolController')
 
 /**
  * Expose routes
@@ -17,7 +17,7 @@ var question = require('../app/controllers/questionController')
 
 module.exports = function (app, twitter) {
 
-	app.get('/', question.display);
+	app.get('/', symbol.display);
 
 	//for the url /lynx-fragrance-poll call display method with param 1
 	// app.get('/question/:name', question.display);

@@ -44,19 +44,19 @@ server.on('close', function(socket) {
 
 
 // Bootstrap models
-// var models_path = __dirname + '/app/models'
-// fs.readdirSync(models_path).forEach(function (file) {
-//   if (~file.indexOf('.js')) require(models_path + '/' + file)
-// })
+var models_path = __dirname + '/app/models'
+fs.readdirSync(models_path).forEach(function (file) {
+  if (~file.indexOf('.js')) require(models_path + '/' + file)
+})
 
 var twitter = require('./core/twitter')(app, server, config);
 
 //bootstrap the database stuff
-var db = require('./core/db')(app, config);
+var db = require('./core/db')(app, twitter, config);
 
 
 // Bootstrap routes
-//require('./core/routes')(app, twitter);
+require('./core/routes')(app, twitter);
 
 
 

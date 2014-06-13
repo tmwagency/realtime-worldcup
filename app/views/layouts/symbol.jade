@@ -1,0 +1,27 @@
+doctype html
+html
+	- var title = page.title
+
+	include ../includes/head
+
+
+	- function addCommas(nStr){
+	- 	  nStr += '';
+	- 	  x = nStr.split('.');
+	- 	  x1 = x[0];
+	- 	  x2 = x.length > 1 ? '.' + x[1] : '';
+	- 	  var rgx = /(\d+)(\d{3})/;
+	- 	  while (rgx.test(x1)) {
+	- 		x1 = x1.replace(rgx, '$1' + ',' + '$2');
+	- 	  }
+	- 	  return x1 + x2;
+	- }
+
+	body
+		.container(data-page-type="question")
+			.page-header
+				h1.page-header-title #{page.title}
+
+			include ../includes/footer
+
+	include ../includes/foot

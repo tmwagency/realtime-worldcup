@@ -7,36 +7,23 @@ html
 	body
 		.container.home(data-page-type="home")
 
-			- var questionCounter = 0;
-			for questions in questionsJSON
+			- var symbolCounter = 0;
+			for symbols in symbolsJSON
 
 				//if the question counter is 0, then output our homepage center content before the next question
-				if (questionCounter === 0)
-					section(class="questionTeaser home-header")
+				if (symbolCounter === 0)
+					section(class="home-header")
 						h1.home-header-title
 							| #{title}
-						p.home-header-content
-							| This is a more complex Twitter vote counter.
 						p.home-header-content
 							| #{pageContent}
 
 
-
-				a(href="/question/#{questions.questionURL}", class="questionTeaser questionTeaser-#{questions.questionURL}")
+				a(class="symbol symbol-#{symbols.name}")
 					section
-						h2.questionTeaser-title #{questions.title}
+						h2.symbol-title #{symbols.name}
 
-				- questionCounter++;
-
-			- questionCounterRemainder = questionCounter % 3;
-
-			- if (questionCounterRemainder > 0)
-				- for (questionCounterRemainder; questionCounterRemainder > 0; questionCounterRemainder--)
-					section(class="questionTeaser questionTeaser--noLink")
-						.questionTeaser-title
-							h2 Coming Soon
-							p Some content in here
-						p.questionTeaser-questionMark ?
+				- symbolCounter++;
 
 
 			include ../includes/footer

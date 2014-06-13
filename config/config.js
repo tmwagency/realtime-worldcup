@@ -7,7 +7,7 @@ var path = require('path'),
 var sharedConfig = {
 	root: rootPath,
 	db : {
-		path: 'mongodb://localhost/node-twitter-voter'
+		path: 'mongodb://localhost/realtime-worldcup'
 	}
 };
 
