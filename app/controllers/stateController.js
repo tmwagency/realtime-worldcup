@@ -4,10 +4,12 @@
  */
 
 var mongoose = require('mongoose')
+	, Promise = require('es6-promise').Promise
 
 	, State = mongoose.model('State')
 	, utils = require('../../lib/utils')
-	, _ = require('underscore');
+	, _ = require('underscore')
+	, _this = this;
 
 
 
@@ -32,32 +34,58 @@ exports.create = function (hashtag, cb) {
 
 
 
-exports.getStates = function (states, next) {
+exports.getStates = function (symbols) {
 
-	var hashtagLength = 0,
-		stateCheckCounter = 0;
+	return new Promise(function (resolve, reject) {
 
-	//for each symbol
-	_.each(states, function (symbol, key) {
+		var symbolStates = [];
 
-		hashtagLength += symbol.hashtags.length;
+		//for each symbol
+		_.each(symbols, function (symbol, key) {
+			symbolStates.push(_this.getSymbolState(symbol));
+		});
+
+		return Promise.all(
+			symbolStates
+		).then(function () {
+			resolve(symbols);
+		});
+
+	});
+}
+
+exports.getSymbolState = function (symbol) {
+
+	return new Promise(function (resolve, reject) {
+
+		var hashtagStates = [];
 
 		//and then for each hashtag
 		_.each(symbol.hashtags, function (hashtag, j) {
+			hashtagStates.push(_this.getHashtagState(hashtag));
+		});
 
-			State.load(hashtag._id, 'today', function (err, currentState) {
-
-				stateCheckCounter++;
-
-				states[key].hashtags[j].state = currentState;
-
-				if (stateCheckCounter === hashtagLength) {
-					next(states);
-				}
-			});
-
+		return Promise.all(
+			hashtagStates
+		).then(function () {
+			resolve();
 		});
 	});
+
+}
+
+exports.getHashtagState = function (hashtag) {
+
+	return new Promise(function (resolve, reject) {
+
+		State.load(hashtag._id, 'today', function (err, currentState) {
+			//states[key].hashtags[j].state = currentState;
+			hashtag.state = currentState;
+			resolve(hashtag);
+		});
+
+	});
+
 }
 
 
@@ -76,27 +104,30 @@ exports.getStates = function (states, next) {
 		}
 	}
 */
-exports.stateArrayToObject = function (states, next) {
+exports.stateArrayToObject = function (states) {
 
-	var stateObject = {};
+	return new Promise(function (resolve, reject) {
 
-	_.each(states, function (symbol) {
+		var stateObject = {};
 
-		stateObject[symbol.name] = {
-			hashtags : {},
-			total : 0
-		}
+		_.each(states, function (symbol) {
 
-		_.each(symbol.hashtags, function (hashtag) {
-			stateObject[symbol.name].hashtags[hashtag.tagname] = {
-				count : hashtag.state.count
+			stateObject[symbol.name] = {
+				hashtags : {},
+				total : 0
 			}
 
-			stateObject[symbol.name].total += stateObject[symbol.name].hashtags[hashtag.tagname].count;
-		})
-	});
+			_.each(symbol.hashtags, function (hashtag) {
+				stateObject[symbol.name].hashtags[hashtag.tagname] = {
+					count : hashtag.state.count
+				}
 
-	next(stateObject);
+				stateObject[symbol.name].total += stateObject[symbol.name].hashtags[hashtag.tagname].count;
+			})
+		});
+
+		resolve(stateObject);
+	});
 }
 
 /**

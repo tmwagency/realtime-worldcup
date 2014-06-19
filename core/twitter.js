@@ -91,12 +91,15 @@ module.exports = function (app, server, config) {
 		console.log('twitter.js: Opening Stream');
 		Symbol.loadAll(function (err, symbols) {
 
-			state.getStates(symbols, function (symbolArray) {
-				state.stateArrayToObject(symbolArray, function (symbolObject) {
-					tracker = symbolObject;
-					t.createStream();
-				});
+			state.getStates(symbols)
+			.then(
+				state.stateArrayToObject
+			)
+			.then(function (symbolObject) {
+				tracker = symbolObject;
+				t.createStream();
 			});
+
 		});
 	};
 	t.createStream = function () {
