@@ -4,6 +4,7 @@
  */
 
 var mongoose = require('mongoose')
+	, Promise = require('es6-promise').Promise
 
 	, setup = require('../../app/controllers/setupController')
 	, Symbol = mongoose.model('Symbol')
@@ -11,7 +12,6 @@ var mongoose = require('mongoose')
 	, utils = require('../../lib/utils')
 	, _ = require('underscore'),
 	_this = this;
-
 
 
 /**
@@ -22,45 +22,56 @@ exports.load = function (req, res, next, id) {
 	console.log('questionController: Loading question from DB');
 
 	Symbol.load(id, function (err, symbol) {
-		if (err) return next(err)
-		if (!symbol) return next(new Error('not found'))
-		req.symbol = symbol
-		next()
-	})
+		if (err) {
+			return next(err);
+		}
+		if (!symbol) {
+			return next(new Error('not found'));
+		}
+		req.symbol = symbol;
+		next();
+	});
 };
 
 /**
  * Create a symbol
  */
 
-exports.create = function (symbolName, value, next) {
-
-	var _this = this;
-
-	//first we need to check if the symbol already exists in the DB - we don't want duplicates
-	Symbol.load(symbolName, function (err, symbol) {
-
-		//if we can't find an id of the same name, it's not in the DB so add it
-		if (!symbol) {
-
-			var symbol = new Symbol({
-				name:	symbolName
-			});
+exports.create = function (symbolName, value) {
 
 
-			//loop through hashtags and
-			_.each(value.hashtags, function (hashtag) {
-				symbol.hashtags.push({
-					tagname: hashtag
+	return new Promise(function (resolve, reject) {
+
+		//first we need to check if the symbol already exists in the DB - we don't want duplicates
+		Symbol.load(symbolName, function (err, symbol) {
+
+			//if we can't find an id of the same name, it's not in the DB so add it
+			if (!symbol) {
+
+				var symbol = new Symbol({
+					name:	symbolName
 				});
-			});
 
-			symbol.save(next);
-		} else {
-			//check we don't need to update it with new potential new values if our symbol has changed
-			//_this.update(symbol, value, next)
-			next('Symbol already exists in collection');
-		}
+				//loop through hashtags and
+				_.each(value.hashtags, function (hashtag) {
+					symbol.hashtags.push({
+						tagname: hashtag
+					});
+				});
+
+				console.log('inside loop')
+				symbol.save(function () {
+					resolve();
+				});
+			} else {
+				//check we don't need to update it with new potential new values if our symbol has changed
+				//_this.update(symbol, value, next)
+				console.log('Symbol already exists in collection');
+				resolve();
+			}
+
+		});
+
 	});
 
 };
@@ -96,7 +107,7 @@ exports.update = function (symbol, value, next) {
 			});
 		});
 
-		symbol.save(next);
+		//symbol.save(next);
 	} else {
 		next('Symbol already exists in collection');
 	}
@@ -111,11 +122,23 @@ exports.display = function(req, res) {
 
 	console.log('questionController: Displaying page:');
 
-	State.loadGlobalState(function (err, doc) {
-		console.log(doc);
+	Symbol.loadAll(function (err, symbols) {
+		state.getStates(symbols, function (symbolArray) {
+			state.stateArrayToObject(symbolArray, function (symbolObject) {
+
+				res.render('layouts/home', {
+				title: 'Realtime World Cup',
+				symbolsJSON: symbols
+			});
+
+			});
+		});
 	});
+
 	//_this.getAllSymbols(req, res);
 };
+
+
 
 exports.getAllSymbols = function (req, res) {
 

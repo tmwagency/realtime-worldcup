@@ -6,6 +6,7 @@
 
 var express = require('express')
 	, mongoose = require('mongoose')
+	, Promise = require('es6-promise').Promise
 	, setup = require('../app/controllers/setupController')
 	, pkg = require('../package.json')
 	, db;
@@ -22,10 +23,15 @@ module.exports = function (app, twitter, config) {
 		// yay!
 		console.log('Connnected to DB\n');
 
-		//creates our questions in the db (if we haven't already)
+		//creates our questions in the db
+		setup.createSymbols(twitter)
 		//then check if a state has been initialised for each question for today
+		.then(setup.createStates)
+		.catch(function (err) {
+			console.log('ERR' + err);
+		})
 		//and then after all that we open our twitter stream
-		setup.createSymbols(twitter, setup.createStates);
+		.then(twitter.openStream);
 
 	});
 

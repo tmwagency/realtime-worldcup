@@ -26,8 +26,8 @@ exports.create = function (hashtag, cb) {
 		date					:	today,
 		count					:	0
 	});
-
-	state.save(cb);
+	cb
+	//state.save(cb);
 }
 
 
@@ -88,11 +88,11 @@ exports.stateArrayToObject = function (states, next) {
 		}
 
 		_.each(symbol.hashtags, function (hashtag) {
-			stateObject[symbol.name].hashtags[hashtag.tagname] = {
-				count : hashtag.state.count
-			}
+			// stateObject[symbol.name].hashtags[hashtag.tagname] = {
+			// 	count : hashtag.state.count
+			// }
 
-			stateObject[symbol.name].total += stateObject[symbol.name].hashtags[hashtag.tagname].count;
+			// stateObject[symbol.name].total += stateObject[symbol.name].hashtags[hashtag.tagname].count;
 		})
 	});
 

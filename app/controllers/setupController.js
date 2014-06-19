@@ -1,6 +1,7 @@
 
 
 var mongoose = require('mongoose')
+	, Promise = require('es6-promise').Promise
 
 	, symbol = require('../../app/controllers/symbolController')
 	, state = require('../../app/controllers/stateController')
@@ -11,70 +12,69 @@ var mongoose = require('mongoose')
 	, _ = require('underscore')
 	, _this = this;
 
-
-exports.createSymbols = function(twitter, next) {
-
-	var trackerJSON = require('../../core/tracker');
-
-	//get the length of our question json
-	var trackerJSONLength = Object.keys(trackerJSON).length;
-
-	//console.log('setupController: getRawQuestionData: length ' + rawQuestionsJSONLength);
-	var symbolsCreated = 0; //as this is async, need to watch for each return function and only continue once ALL
-							//symbols have been created
-
-
-	//loop through the JSON array and create each symbol
-	_.each(trackerJSON, function (symbolJSON, i) {
-
-		//console.log(symbolJSON, i);
-		symbol.create(i, symbolJSON, function (err) {
-
-			if (err) {
-				console.log('setupController: create: ' + err + ': Symbol not saved');
-			} else {
-				console.log('setupController: create: Symbol saved to collection');
-			}
-			symbolsCreated++;
-
-			//if we have reached the end of our questions, call our callback
-			//which in this case checks the states, and then opens our twitter stream
-			if (symbolsCreated === trackerJSONLength) {
-				next(_this, twitter.openStream);
-			}
-
-		});
-	}, this);
-
-};
-
-
-exports.createStates = function (page, cb) {
-
-	console.log('setupController: createStates: Creating States');
-
-	var stateCheckCounter = 0;
-
-	//first get all the questions
-	Symbol.loadAll(function (err, symbols) {
-
-		var symbolsLength = symbols.length;
-
-		console.log('setupController: createStates: Number of Symbols: ' + symbolsLength);
-
-		symbols.forEach(function (s) {
-			_this.checkState(s, function (state) {
-				stateCheckCounter++;
-
-				if (stateCheckCounter === symbolsLength) {
-					cb();
-				}
-			});
-		});
+//returns a promise which resolves when the JSON is recieved by the function
+exports.getJSON = function (url) {
+	return new Promise(function (resolve, reject) {
+		var tempJSON = require(url);
+		resolve(tempJSON);
 	});
 };
 
-exports.checkState = function (symbol, next) {
+exports.createSymbols = function(twitter) {
+
+	return new Promise(function (resolve, reject) {
+
+		_this.getJSON('../../core/tracker').then(function (response) {
+
+			//create an array of promises for our symbols
+			var symbolPromises = [];
+
+			//loop through the JSON array and create each symbol
+			_.each(response, function (symbolJSON, i) {
+				symbolPromises.push(symbol.create(i, symbolJSON));
+			});
+
+			return Promise.all(
+				symbolPromises
+			);
+		})
+		.catch(function(err) {
+			reject(err);
+		})
+		.then(function () {
+			resolve();
+		})
+
+	});
+
+};
+
+
+exports.createStates = function () {
+
+	return new Promise(function (resolve, reject) {
+
+		console.log('setupController: createStates: Creating States');
+
+		//first get all the questions
+		Symbol.loadAll(function (err, symbols) {
+
+			var symbolsLength = symbols.length;
+
+			console.log('setupController: createStates: Number of Symbols: ' + symbolsLength);
+
+			symbols.forEach(function (s) {
+				console.log('BOO');
+				_this.checkState(s, function (state) {
+					resolve();
+				});
+			});
+		});
+
+	});
+};
+
+exports.checkState = function (symbol) {
 
 	var hashtagLength = symbol.hashtags.length,
 		stateCheckCounter = 0;;
@@ -91,7 +91,7 @@ exports.checkState = function (symbol, next) {
 			if (currentState) {
 				console.log('setupController: checkState: State found for ' +  value.tagname);
 				if (stateCheckCounter === hashtagLength) {
-					next(currentState);
+					return currentState;
 				}
 
 			//else create a state in the DB and set to zero
@@ -107,7 +107,7 @@ exports.checkState = function (symbol, next) {
 					}
 
 					if (stateCheckCounter === hashtagLength) {
-						next(state);
+						return state;
 					}
 
 				});

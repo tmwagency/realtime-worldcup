@@ -159,7 +159,7 @@ module.exports = function (app, server, config) {
 	//this function is called any time we receive some data from the twitter stream
 	//we go through the tags, work out which one was mentioned, and then update our tracker
 	t.dataReceived = function (data) {
-		console.log('twitter.js: receiving');
+		//console.log('twitter.js: receiving');
 
 		//Since twitter doesnt know why the tweet was forwarded we have to search through the text
 		//and determine which hashtag it was meant for. Sometimes we can't tell, in which case we don't
@@ -176,7 +176,7 @@ module.exports = function (app, server, config) {
 				country: ''
 			},
 			tweetText = data.text.toLowerCase();
-			console.log(tweetText);
+			//console.log(tweetText);
 
 			t.matchTweetToHashtags(tweetText);
 		}
@@ -200,7 +200,7 @@ module.exports = function (app, server, config) {
 
 					validTweet = true;
 
-					console.log(symbol);
+					//console.log(symbol);
 				}
 			});
 		});
